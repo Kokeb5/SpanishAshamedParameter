@@ -1,5 +1,7 @@
 # PRIKEB - Application de Communication
 
+**Créé par Renaud Kokeb** ✨
+
 ## 🌟 Fonctionnalités
 
 **PRIKEB** est une application de communication en temps réel moderne et complète qui offre :
@@ -58,3 +60,6 @@
 ---
 
 **PRIKEB** - Une expérience de communication moderne et sécurisée ! 🎉
+
+### 👨‍💻 Créateur
+**Renaud Kokeb** - Développeur de l'application PRIKEB

@@ -1179,3 +1179,36 @@ body {
         padding: 3px 6px;
     }
 }
+
+/* Footer avec créateur */
+.app-footer {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    background: var(--secondary-bg);
+    padding: 8px 15px;
+    border-top: 1px solid var(--border-color);
+    border-left: 1px solid var(--border-color);
+    border-radius: 8px 0 0 0;
+    font-size: 0.8em;
+    color: var(--secondary-text);
+    z-index: 100;
+}
+
+.app-footer p {
+    margin: 0;
+}
+
+.app-footer strong {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+/* Info créateur dans le header */
+.creator-info {
+    font-size: 0.7em;
+    color: var(--secondary-text);
+    margin-top: 2px;
+    font-style: italic;
+    opacity: 0.8;
+}

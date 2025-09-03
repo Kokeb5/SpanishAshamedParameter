@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat en Temps Réel</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="chat-container">
+        <h1>💬 Chat en Temps Réel</h1>
+        
+        <div class="user-input">
+            <input type="text" id="username" placeholder="Votre nom" maxlength="20">
+        </div>
+        
+        <div class="messages-container">
+            <div id="messages"></div>
+        </div>
+        
+        <div class="message-input">
+            <input type="text" id="messageInput" placeholder="Tapez votre message..." maxlength="500">
+            <button id="sendButton">Envoyer</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+</body>
+</html>

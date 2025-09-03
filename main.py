@@ -83,7 +83,33 @@ def get_users():
         'id': user.id,
         'username': user.username,
         'status': user.status,
-        'avatar': user.avatar
+        'avatar': user.avatar,
+        'last_seen': user.last_seen.isoformat() if user.last_seen else None
+    } for user in users])
+
+@app.route('/api/search_users')
+def search_users():
+    query = request.args.get('q', '').strip()
+    
+    if not query:
+        return jsonify([])
+    
+    # Ajouter @ si pas présent
+    if not query.startswith('@'):
+        query = '@' + query
+    
+    # Recherche insensible à la casse
+    users = User.query.filter(
+        User.username.ilike(f'%{query}%')
+    ).limit(20).all()
+    
+    return jsonify([{
+        'id': user.id,
+        'username': user.username,
+        'status': user.status,
+        'avatar': user.avatar,
+        'last_seen': user.last_seen.isoformat() if user.last_seen else None,
+        'bio': user.bio
     } for user in users])
 
 @app.route('/api/messages/<int:room_id>')

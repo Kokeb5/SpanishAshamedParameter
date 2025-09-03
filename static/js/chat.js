@@ -29,6 +29,11 @@ const elements = {
     // Utilisateurs
     usersSection: document.getElementById('usersSection'),
     usersList: document.getElementById('usersList'),
+    searchUsersBtn: document.getElementById('searchUsersBtn'),
+    userSearchContainer: document.getElementById('userSearchContainer'),
+    userSearchInput: document.getElementById('userSearchInput'),
+    closeUserSearch: document.getElementById('closeUserSearch'),
+    searchResults: document.getElementById('searchResults'),
     
     // Messages
     messagesContainer: document.getElementById('messagesContainer'),
@@ -229,11 +234,117 @@ function checkUsernameAvailability(username) {
         });
 }
 
+// Recherche d'utilisateurs
+function searchUsers(query) {
+    if (!query || query.length < 2) {
+        elements.searchResults.classList.remove('show');
+        return;
+    }
+    
+    fetch(`/api/search_users?q=${encodeURIComponent(query)}`)
+        .then(r => r.json())
+        .then(users => {
+            displaySearchResults(users);
+        })
+        .catch(err => {
+            console.error('Erreur lors de la recherche:', err);
+            elements.searchResults.innerHTML = '<div class="no-results">Erreur lors de la recherche</div>';
+            elements.searchResults.classList.add('show');
+        });
+}
+
+function displaySearchResults(users) {
+    elements.searchResults.innerHTML = '';
+    
+    if (users.length === 0) {
+        elements.searchResults.innerHTML = '<div class="no-results">Aucun utilisateur trouvé</div>';
+    } else {
+        users.forEach(user => {
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'search-result-item';
+            
+            const isCurrentUser = currentUser && user.username === currentUser.username;
+            
+            resultDiv.innerHTML = `
+                <div class="avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="search-result-info">
+                    <div class="search-result-username">${escapeHtml(user.username.replace('@', ''))}</div>
+                    <div class="search-result-status">${user.status === 'online' ? 'En ligne' : 'Hors ligne'} • Vu ${formatLastSeen(user.last_seen)}</div>
+                </div>
+                <div class="search-result-actions">
+                    ${!isCurrentUser ? `
+                        <button class="search-action-btn" onclick="startPrivateChat('${user.username}')">
+                            <i class="fas fa-comment"></i>
+                        </button>
+                        <button class="search-action-btn secondary" onclick="viewUserProfile('${user.username}')">
+                            <i class="fas fa-user"></i>
+                        </button>
+                    ` : '<span class="search-result-status">Vous</span>'}
+                </div>
+            `;
+            
+            elements.searchResults.appendChild(resultDiv);
+        });
+    }
+    
+    elements.searchResults.classList.add('show');
+}
+
+function formatLastSeen(lastSeen) {
+    const now = new Date();
+    const seen = new Date(lastSeen);
+    const diffMs = now - seen;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+    
+    if (diffMins < 1) return 'à l\'instant';
+    if (diffMins < 60) return `il y a ${diffMins}min`;
+    if (diffHours < 24) return `il y a ${diffHours}h`;
+    if (diffDays < 7) return `il y a ${diffDays}j`;
+    return seen.toLocaleDateString('fr-FR');
+}
+
+function startPrivateChat(username) {
+    showNotification('Message privé', `Fonctionnalité bientôt disponible pour ${username}`, 'info');
+    closeUserSearch();
+}
+
+function viewUserProfile(username) {
+    showNotification('Profil utilisateur', `Profil de ${username} - Fonctionnalité bientôt disponible`, 'info');
+    closeUserSearch();
+}
+
+function openUserSearch() {
+    elements.userSearchContainer.style.display = 'block';
+    elements.userSearchInput.focus();
+    elements.searchResults.classList.remove('show');
+}
+
+function closeUserSearch() {
+    elements.userSearchContainer.style.display = 'none';
+    elements.userSearchInput.value = '';
+    elements.searchResults.classList.remove('show');
+}
+
 // Gestion des utilisateurs
 function updateUsersList(users) {
     elements.usersList.innerHTML = '';
     
-    users.forEach(user => {
+    // Filtrer pour n'afficher que les utilisateurs en ligne
+    const onlineUsers = users.filter(user => user.status === 'online');
+    
+    if (onlineUsers.length === 0) {
+        const emptyDiv = document.createElement('div');
+        emptyDiv.className = 'no-results';
+        emptyDiv.textContent = 'Aucun utilisateur en ligne';
+        elements.usersList.appendChild(emptyDiv);
+        return;
+    }
+    
+    onlineUsers.forEach(user => {
         const userDiv = document.createElement('div');
         userDiv.className = 'user-item';
         userDiv.innerHTML = `
@@ -241,14 +352,13 @@ function updateUsersList(users) {
                 <i class="fas fa-user"></i>
             </div>
             <span class="username">${escapeHtml(user.username.replace('@', ''))}</span>
-            <span class="status ${user.status}">${user.status === 'online' ? 'En ligne' : 'Hors ligne'}</span>
+            <span class="status ${user.status}">En ligne</span>
         `;
         
-        // Clic pour message privé (à implémenter)
+        // Clic pour voir le profil ou envoyer un message
         userDiv.onclick = () => {
             if (user.username !== currentUser.username) {
-                // Implémenter les messages privés
-                console.log('Message privé à', user.username);
+                startPrivateChat(user.username);
             }
         };
         
@@ -567,6 +677,32 @@ elements.confirmIconChange.onclick = () => {
         changeAppIcon(selectedIcon.class, selectedIcon.name);
     }
     closeIconSelector();
+};
+
+// Event listeners pour la recherche d'utilisateurs
+elements.searchUsersBtn.onclick = openUserSearch;
+elements.closeUserSearch.onclick = closeUserSearch;
+
+elements.userSearchInput.oninput = (e) => {
+    const query = e.target.value.trim();
+    searchUsers(query);
+};
+
+elements.userSearchInput.onkeypress = (e) => {
+    if (e.key === 'Escape') {
+        closeUserSearch();
+    }
+};
+
+// Fermer la recherche en cliquant ailleurs
+document.onclick = (e) => {
+    if (!elements.userSearchContainer.contains(e.target) && 
+        !elements.searchUsersBtn.contains(e.target) && 
+        !elements.emojiPicker.contains(e.target) && 
+        !elements.emojiBtn.contains(e.target)) {
+        elements.userSearchContainer.style.display = 'none';
+        elements.emojiPicker.style.display = 'none';
+    }
 };
 
 // Sélection d'icônes

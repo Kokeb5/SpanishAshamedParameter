@@ -147,13 +147,54 @@ body {
     gap: 10px;
 }
 
-.login-section input {
-    padding: 10px;
+.username-input-container {
+    display: flex;
+    align-items: center;
     border: 1px solid var(--border-color);
     border-radius: 4px;
     background: var(--tertiary-bg);
+    overflow: hidden;
+}
+
+.username-prefix {
+    padding: 10px 0 10px 10px;
+    color: var(--primary-color);
+    font-weight: 600;
+    font-size: 14px;
+    user-select: none;
+}
+
+.login-section input {
+    flex: 1;
+    padding: 10px 10px 10px 5px;
+    border: none;
+    background: transparent;
     color: var(--text-color);
     font-size: 14px;
+    outline: none;
+}
+
+.username-input-container:focus-within {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(88, 101, 242, 0.2);
+}
+
+.username-status {
+    font-size: 0.8em;
+    margin: 5px 0;
+    min-height: 16px;
+}
+
+.username-status.available {
+    color: var(--accent-color);
+}
+
+.username-status.taken {
+    color: var(--danger-color);
+}
+
+.username-status.invalid {
+    color: var(--warning-color);
 }
 
 .primary-btn {
@@ -334,6 +375,11 @@ body {
 .message-username {
     font-weight: 600;
     font-size: 0.9em;
+    color: var(--primary-color);
+}
+
+.message-username::before {
+    content: '@';
     color: var(--primary-color);
 }
 
@@ -600,6 +646,11 @@ body {
     margin-left: auto;
     font-size: 0.7em;
     padding: 1px 4px;
+}
+
+.user-item .username::before {
+    content: '@';
+    color: var(--primary-color);
 }
 
 /* Animations */

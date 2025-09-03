@@ -139,8 +139,34 @@ def handle_disconnect():
 @socketio.on('join_user')
 def handle_join_user(data):
     username = data.get('username', '').strip()
+    
+    # Validation du nom d'utilisateur
     if not username:
         emit('error', {'message': 'Nom d\'utilisateur requis'})
+        return
+    
+    if not username.startswith('@'):
+        emit('error', {'message': 'Le nom d\'utilisateur doit commencer par @'})
+        return
+    
+    if len(username) < 3:  # @ + au moins 2 caractères
+        emit('error', {'message': 'Le nom d\'utilisateur doit contenir au moins 2 caractères après @'})
+        return
+    
+    if len(username) > 20:  # @ + 19 caractères max
+        emit('error', {'message': 'Le nom d\'utilisateur ne peut pas dépasser 19 caractères après @'})
+        return
+    
+    # Vérifier les caractères autorisés
+    username_part = username[1:]  # Sans le @
+    if not username_part.replace('_', '').replace('-', '').isalnum():
+        emit('error', {'message': 'Seules les lettres, chiffres, _ et - sont autorisés'})
+        return
+    
+    # Vérifier l'unicité
+    existing_user = User.query.filter(User.username.ilike(username)).first()
+    if existing_user and existing_user.status == 'online':
+        emit('error', {'message': 'Ce nom d\'utilisateur est déjà utilisé par un utilisateur connecté'})
         return
     
     # Créer ou récupérer l'utilisateur

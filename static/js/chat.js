@@ -13,6 +13,7 @@ const elements = {
     // Connexion
     loginSection: document.getElementById('loginSection'),
     usernameInput: document.getElementById('usernameInput'),
+    usernameStatus: document.getElementById('usernameStatus'),
     joinBtn: document.getElementById('joinBtn'),
     
     // Profil
@@ -185,6 +186,49 @@ function closeIconSelector() {
     });
 }
 
+// Validation du nom d'utilisateur
+function validateUsername(username) {
+    // Supprimer @ s'il est déjà présent
+    const cleanUsername = username.startsWith('@') ? username.slice(1) : username;
+    
+    if (!cleanUsername || cleanUsername.length < 2) {
+        return { valid: false, message: 'Minimum 2 caractères requis' };
+    }
+    
+    if (cleanUsername.length > 19) {
+        return { valid: false, message: 'Maximum 19 caractères autorisés' };
+    }
+    
+    if (!/^[a-zA-Z0-9_]+$/.test(cleanUsername)) {
+        return { valid: false, message: 'Seules les lettres, chiffres et _ sont autorisés' };
+    }
+    
+    return { valid: true, username: '@' + cleanUsername };
+}
+
+function checkUsernameAvailability(username) {
+    // Vérifier la disponibilité côté client d'abord
+    fetch('/api/users')
+        .then(r => r.json())
+        .then(users => {
+            const exists = users.some(user => user.username.toLowerCase() === username.toLowerCase());
+            
+            if (exists) {
+                elements.usernameStatus.textContent = 'Ce nom d\'utilisateur est déjà pris';
+                elements.usernameStatus.className = 'username-status taken';
+                elements.joinBtn.disabled = true;
+            } else {
+                elements.usernameStatus.textContent = 'Nom d\'utilisateur disponible';
+                elements.usernameStatus.className = 'username-status available';
+                elements.joinBtn.disabled = false;
+            }
+        })
+        .catch(() => {
+            elements.usernameStatus.textContent = '';
+            elements.usernameStatus.className = 'username-status';
+        });
+}
+
 // Gestion des utilisateurs
 function updateUsersList(users) {
     elements.usersList.innerHTML = '';
@@ -196,7 +240,7 @@ function updateUsersList(users) {
             <div class="avatar">
                 <i class="fas fa-user"></i>
             </div>
-            <span class="username">${escapeHtml(user.username)}</span>
+            <span class="username">${escapeHtml(user.username.replace('@', ''))}</span>
             <span class="status ${user.status}">${user.status === 'online' ? 'En ligne' : 'Hors ligne'}</span>
         `;
         
@@ -274,7 +318,7 @@ function displayMessage(data) {
     
     messageDiv.innerHTML = `
         <div class="message-header">
-            <span class="message-username">${escapeHtml(data.username)}</span>
+            <span class="message-username">${escapeHtml(data.username.replace('@', ''))}</span>
             <span class="message-timestamp">${data.timestamp}</span>
         </div>
         <div class="message-content" data-message-id="${data.id}">
@@ -408,14 +452,41 @@ function searchMessages() {
 
 // Event Listeners
 elements.joinBtn.onclick = () => {
-    const username = elements.usernameInput.value.trim();
-    if (username) {
-        socket.emit('join_user', { username });
+    const inputValue = elements.usernameInput.value.trim();
+    const validation = validateUsername(inputValue);
+    
+    if (validation.valid) {
+        socket.emit('join_user', { username: validation.username });
+    } else {
+        elements.usernameStatus.textContent = validation.message;
+        elements.usernameStatus.className = 'username-status invalid';
+        elements.joinBtn.disabled = true;
+    }
+};
+
+elements.usernameInput.oninput = (e) => {
+    const inputValue = e.target.value.trim();
+    const validation = validateUsername(inputValue);
+    
+    if (!inputValue) {
+        elements.usernameStatus.textContent = '';
+        elements.usernameStatus.className = 'username-status';
+        elements.joinBtn.disabled = true;
+        return;
+    }
+    
+    if (!validation.valid) {
+        elements.usernameStatus.textContent = validation.message;
+        elements.usernameStatus.className = 'username-status invalid';
+        elements.joinBtn.disabled = true;
+    } else {
+        // Vérifier la disponibilité
+        checkUsernameAvailability(validation.username);
     }
 };
 
 elements.usernameInput.onkeypress = (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && !elements.joinBtn.disabled) {
         elements.joinBtn.click();
     }
 };
@@ -618,6 +689,9 @@ setInterval(() => {
         fetch('/api/users').then(r => r.json()).then(updateUsersList);
     }
 }, 5000);
+
+// Initialiser l'état du bouton
+elements.joinBtn.disabled = true;
 
 // Focus sur le champ nom d'utilisateur au chargement
 elements.usernameInput.focus();

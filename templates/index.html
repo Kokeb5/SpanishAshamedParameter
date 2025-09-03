@@ -34,7 +34,11 @@
             
             <!-- Connexion -->
             <div class="login-section" id="loginSection">
-                <input type="text" id="usernameInput" placeholder="Votre nom d'utilisateur" maxlength="20">
+                <div class="username-input-container">
+                    <span class="username-prefix">@</span>
+                    <input type="text" id="usernameInput" placeholder="nom_utilisateur" maxlength="19">
+                </div>
+                <div class="username-status" id="usernameStatus"></div>
                 <button id="joinBtn" class="primary-btn">Se connecter</button>
             </div>
             

@@ -6,6 +6,7 @@ let currentRoomId = null;
 let typingTimer = null;
 let isTyping = false;
 let isDarkTheme = true;
+let selectedIcon = null;
 
 // Éléments DOM
 const elements = {
@@ -38,10 +39,17 @@ const elements = {
     
     // Interface
     themeToggle: document.getElementById('themeToggle'),
+    iconSelector: document.getElementById('iconSelector'),
+    appIcon: document.getElementById('appIcon'),
     searchBtn: document.getElementById('searchBtn'),
     searchBar: document.getElementById('searchBar'),
     searchInput: document.getElementById('searchInput'),
     closeSearch: document.getElementById('closeSearch'),
+    
+    // Sélecteur d'icônes
+    iconSelectorModal: document.getElementById('iconSelectorModal'),
+    confirmIconChange: document.getElementById('confirmIconChange'),
+    cancelIconChange: document.getElementById('cancelIconChange'),
     
     // Emojis et fichiers
     emojiBtn: document.getElementById('emojiBtn'),
@@ -124,6 +132,57 @@ function loadTheme() {
     if (savedTheme === 'light') {
         toggleTheme();
     }
+}
+
+// Gestion des icônes
+function changeAppIcon(iconClass, iconName) {
+    // Animation de changement
+    elements.appIcon.classList.add('changing');
+    
+    setTimeout(() => {
+        elements.appIcon.className = iconClass;
+        elements.appIcon.classList.remove('changing');
+        
+        // Sauvegarder le choix
+        localStorage.setItem('appIcon', iconClass);
+        localStorage.setItem('appIconName', iconName);
+        
+        showNotification('Icône changée', `L'icône de PRIKEB est maintenant : ${iconName}`, 'success');
+    }, 250);
+}
+
+function loadSavedIcon() {
+    const savedIcon = localStorage.getItem('appIcon');
+    if (savedIcon) {
+        elements.appIcon.className = savedIcon;
+    }
+}
+
+function openIconSelector() {
+    elements.iconSelectorModal.classList.add('show');
+    
+    // Marquer l'icône actuelle comme sélectionnée
+    const currentIconClass = elements.appIcon.className;
+    document.querySelectorAll('.icon-option').forEach(option => {
+        option.classList.remove('selected');
+        if (option.dataset.icon === currentIconClass) {
+            option.classList.add('selected');
+            selectedIcon = {
+                class: currentIconClass,
+                name: option.dataset.name
+            };
+        }
+    });
+}
+
+function closeIconSelector() {
+    elements.iconSelectorModal.classList.remove('show');
+    selectedIcon = null;
+    
+    // Retirer toutes les sélections
+    document.querySelectorAll('.icon-option').forEach(option => {
+        option.classList.remove('selected');
+    });
 }
 
 // Gestion des utilisateurs
@@ -372,6 +431,7 @@ elements.messageInput.onkeypress = (e) => {
 };
 
 elements.themeToggle.onclick = toggleTheme;
+elements.iconSelector.onclick = openIconSelector;
 elements.searchBtn.onclick = toggleSearch;
 elements.closeSearch.onclick = () => {
     elements.searchBar.style.display = 'none';
@@ -427,6 +487,33 @@ elements.confirmCreateRoom.onclick = () => {
         elements.newRoomDescription.value = '';
     }
 };
+
+// Event listeners pour le sélecteur d'icônes
+elements.cancelIconChange.onclick = closeIconSelector;
+
+elements.confirmIconChange.onclick = () => {
+    if (selectedIcon) {
+        changeAppIcon(selectedIcon.class, selectedIcon.name);
+    }
+    closeIconSelector();
+};
+
+// Sélection d'icônes
+document.querySelectorAll('.icon-option').forEach(option => {
+    option.onclick = () => {
+        // Retirer la sélection précédente
+        document.querySelectorAll('.icon-option').forEach(opt => {
+            opt.classList.remove('selected');
+        });
+        
+        // Sélectionner la nouvelle icône
+        option.classList.add('selected');
+        selectedIcon = {
+            class: option.dataset.icon,
+            name: option.dataset.name
+        };
+    };
+});
 
 // Socket Events
 socket.on('connect', () => {
@@ -522,6 +609,7 @@ socket.on('error', (data) => {
 
 // Initialisation
 loadTheme();
+loadSavedIcon();
 
 // Charger les salles et utilisateurs
 setInterval(() => {

@@ -12,8 +12,11 @@
         <!-- Sidebar -->
         <div class="sidebar">
             <div class="sidebar-header">
-                <h2><i class="fas fa-comments"></i> PRIKEB</h2>
-                <button id="themeToggle" class="theme-btn"><i class="fas fa-moon"></i></button>
+                <h2><i id="appIcon" class="fas fa-comments"></i> PRIKEB</h2>
+                <div class="header-controls">
+                    <button id="iconSelector" class="theme-btn" title="Changer l'icône"><i class="fas fa-palette"></i></button>
+                    <button id="themeToggle" class="theme-btn" title="Changer le thème"><i class="fas fa-moon"></i></button>
+                </div>
             </div>
             
             <!-- Profil utilisateur -->
@@ -191,6 +194,35 @@
                     <span class="emoji-item" data-emoji="💝">💝</span>
                     <span class="emoji-item" data-emoji="💟">💟</span>
                 </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sélecteur d'icônes -->
+    <div class="icon-selector-modal" id="iconSelectorModal">
+        <div class="modal-content">
+            <h3>Choisir l'icône de l'application</h3>
+            <div class="icon-options">
+                <div class="icon-option" data-icon="fas fa-comments" data-name="Chat">
+                    <i class="fas fa-comments"></i>
+                    <span>Chat</span>
+                </div>
+                <div class="icon-option" data-icon="fas fa-cloud-sun" data-name="Météo">
+                    <i class="fas fa-cloud-sun"></i>
+                    <span>Météo</span>
+                </div>
+                <div class="icon-option" data-icon="fas fa-sticky-note" data-name="Note">
+                    <i class="fas fa-sticky-note"></i>
+                    <span>Note</span>
+                </div>
+                <div class="icon-option" data-icon="fas fa-calendar-alt" data-name="Agenda">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>Agenda</span>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button id="cancelIconChange">Annuler</button>
+                <button id="confirmIconChange" class="primary-btn">Confirmer</button>
             </div>
         </div>
     </div>

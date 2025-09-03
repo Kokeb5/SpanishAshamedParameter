@@ -65,6 +65,11 @@ body {
     color: var(--text-color);
 }
 
+.header-controls {
+    display: flex;
+    gap: 5px;
+}
+
 .theme-btn {
     background: none;
     border: none;
@@ -73,11 +78,28 @@ body {
     padding: 8px;
     border-radius: 4px;
     transition: all 0.3s ease;
+    position: relative;
 }
 
 .theme-btn:hover {
     background: var(--hover-color);
     color: var(--text-color);
+}
+
+.theme-btn:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--tertiary-bg);
+    color: var(--text-color);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    white-space: nowrap;
+    z-index: 1000;
+    border: 1px solid var(--border-color);
 }
 
 /* Profil utilisateur */
@@ -774,6 +796,75 @@ body {
     background: linear-gradient(135deg, var(--tertiary-bg), var(--secondary-bg));
 }
 
+/* Sélecteur d'icônes */
+.icon-selector-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.icon-selector-modal.show {
+    display: flex;
+}
+
+.icon-options {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.icon-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 20px;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: var(--tertiary-bg);
+}
+
+.icon-option:hover {
+    border-color: var(--primary-color);
+    background: var(--hover-color);
+    transform: translateY(-2px);
+}
+
+.icon-option.selected {
+    border-color: var(--primary-color);
+    background: var(--primary-color);
+    color: white;
+}
+
+.icon-option i {
+    font-size: 2em;
+    margin-bottom: 5px;
+}
+
+.icon-option span {
+    font-size: 0.9em;
+    font-weight: 600;
+}
+
+/* Animation pour le changement d'icône */
+#appIcon {
+    transition: all 0.5s ease;
+}
+
+#appIcon.changing {
+    transform: scale(1.2) rotate(360deg);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .sidebar {
@@ -795,5 +886,18 @@ body {
     
     .notification.show {
         right: 10px;
+    }
+    
+    .icon-options {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+    
+    .icon-option {
+        padding: 15px;
+    }
+    
+    .icon-option i {
+        font-size: 1.5em;
     }
 }

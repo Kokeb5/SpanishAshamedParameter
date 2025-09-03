@@ -456,7 +456,7 @@ socket.on('user_joined', (data) => {
     // Rejoindre la salle générale
     socket.emit('join_room', { room: 'general' });
     
-    showNotification('Bienvenue', `Connecté en tant que ${data.username}`, 'success');
+    showNotification('Bienvenue sur PRIKEB', `Connecté en tant que ${data.username}`, 'success');
 });
 
 socket.on('room_joined', (data) => {

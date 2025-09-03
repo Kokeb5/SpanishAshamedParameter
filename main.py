@@ -446,4 +446,9 @@ with app.app_context():
         db.session.commit()
 
 if __name__ == '__main__':
+    with app.app_context():
+        # Supprimer toutes les tables et les recréer avec la nouvelle structure
+        db.drop_all()
+        db.create_all()
+        print("Base de données initialisée avec succès !")
     socketio.run(app, host='0.0.0.0', port=5000, use_reloader=False, log_output=True)

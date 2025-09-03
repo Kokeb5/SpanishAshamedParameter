@@ -139,12 +139,22 @@ body {
     color: white;
 }
 
-/* Section de connexion */
-.login-section {
+/* Section d'authentification */
+.auth-section {
     padding: 15px;
+}
+
+.login-form, .register-form {
     display: flex;
     flex-direction: column;
     gap: 10px;
+}
+
+.login-form h4, .register-form h4 {
+    margin-bottom: 10px;
+    color: var(--text-color);
+    font-size: 1em;
+    text-align: center;
 }
 
 .username-input-container {
@@ -164,7 +174,25 @@ body {
     user-select: none;
 }
 
-.login-section input {
+.auth-section input[type="email"], 
+.auth-section input[type="password"] {
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--tertiary-bg);
+    color: var(--text-color);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.3s ease;
+}
+
+.auth-section input[type="email"]:focus,
+.auth-section input[type="password"]:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(88, 101, 242, 0.2);
+}
+
+.register-form input {
     flex: 1;
     padding: 10px 10px 10px 5px;
     border: none;
@@ -179,22 +207,40 @@ body {
     box-shadow: 0 0 0 2px rgba(88, 101, 242, 0.2);
 }
 
-.username-status {
+.auth-status {
     font-size: 0.8em;
     margin: 5px 0;
     min-height: 16px;
+    text-align: center;
 }
 
-.username-status.available {
+.auth-status.success {
     color: var(--accent-color);
 }
 
-.username-status.taken {
+.auth-status.error {
     color: var(--danger-color);
 }
 
-.username-status.invalid {
-    color: var(--warning-color);
+.auth-status.info {
+    color: var(--primary-color);
+}
+
+.auth-switch {
+    text-align: center;
+    font-size: 0.9em;
+    color: var(--secondary-text);
+    margin: 10px 0 0 0;
+}
+
+.auth-switch a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.auth-switch a:hover {
+    text-decoration: underline;
 }
 
 .primary-btn {

@@ -25,11 +25,14 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(128), nullable=False)
     avatar = db.Column(db.String(200), default='default.png')
     status = db.Column(db.String(20), default='offline')
     last_seen = db.Column(db.DateTime, default=datetime.datetime.utcnow)
     bio = db.Column(db.Text, default='')
     created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    verified = db.Column(db.Boolean, default=True)  # Simplified for now
 
 class Room(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -162,45 +165,86 @@ def handle_disconnect():
         if session_id in user_rooms:
             del user_rooms[session_id]
 
-@socketio.on('join_user')
-def handle_join_user(data):
+@socketio.on('register_user')
+def handle_register_user(data):
     username = data.get('username', '').strip()
+    email = data.get('email', '').strip().lower()
+    password = data.get('password', '').strip()
     
-    # Validation du nom d'utilisateur
-    if not username:
-        emit('error', {'message': 'Nom d\'utilisateur requis'})
+    # Validation des données
+    if not username or not email or not password:
+        emit('error', {'message': 'Tous les champs sont requis'})
         return
     
     if not username.startswith('@'):
         emit('error', {'message': 'Le nom d\'utilisateur doit commencer par @'})
         return
     
-    if len(username) < 3:  # @ + au moins 2 caractères
-        emit('error', {'message': 'Le nom d\'utilisateur doit contenir au moins 2 caractères après @'})
+    if len(username) < 3 or len(username) > 20:
+        emit('error', {'message': 'Le nom d\'utilisateur doit contenir entre 2 et 19 caractères après @'})
         return
     
-    if len(username) > 20:  # @ + 19 caractères max
-        emit('error', {'message': 'Le nom d\'utilisateur ne peut pas dépasser 19 caractères après @'})
+    # Validation email
+    import re
+    if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
+        emit('error', {'message': 'Adresse email invalide'})
         return
     
-    # Vérifier les caractères autorisés
-    username_part = username[1:]  # Sans le @
-    if not username_part.replace('_', '').replace('-', '').isalnum():
-        emit('error', {'message': 'Seules les lettres, chiffres, _ et - sont autorisés'})
+    if len(password) < 6:
+        emit('error', {'message': 'Le mot de passe doit contenir au moins 6 caractères'})
         return
     
     # Vérifier l'unicité
-    existing_user = User.query.filter(User.username.ilike(username)).first()
-    if existing_user and existing_user.status == 'online':
-        emit('error', {'message': 'Ce nom d\'utilisateur est déjà utilisé par un utilisateur connecté'})
+    existing_user = User.query.filter(
+        (User.username.ilike(username)) | (User.email.ilike(email))
+    ).first()
+    
+    if existing_user:
+        if existing_user.email.lower() == email:
+            emit('error', {'message': 'Cette adresse email est déjà utilisée. Un compte par personne seulement.'})
+        else:
+            emit('error', {'message': 'Ce nom d\'utilisateur est déjà pris'})
         return
     
-    # Créer ou récupérer l'utilisateur
-    user = User.query.filter_by(username=username).first()
+    # Créer l'utilisateur
+    import hashlib
+    password_hash = hashlib.sha256(password.encode()).hexdigest()
+    
+    user = User(
+        username=username,
+        email=email,
+        password_hash=password_hash
+    )
+    db.session.add(user)
+    db.session.commit()
+    
+    emit('registration_success', {
+        'message': 'Compte créé avec succès ! Vous pouvez maintenant vous connecter.'
+    })
+
+@socketio.on('login_user')
+def handle_login_user(data):
+    email = data.get('email', '').strip().lower()
+    password = data.get('password', '').strip()
+    
+    if not email or not password:
+        emit('error', {'message': 'Email et mot de passe requis'})
+        return
+    
+    # Vérifier les identifiants
+    import hashlib
+    password_hash = hashlib.sha256(password.encode()).hexdigest()
+    
+    user = User.query.filter_by(email=email, password_hash=password_hash).first()
+    
     if not user:
-        user = User(username=username)
-        db.session.add(user)
-        db.session.commit()
+        emit('error', {'message': 'Email ou mot de passe incorrect'})
+        return
+    
+    # Vérifier si déjà connecté
+    if user.status == 'online':
+        emit('error', {'message': 'Ce compte est déjà connecté sur un autre appareil'})
+        return
     
     # Mettre à jour le statut
     user.status = 'online'
@@ -219,6 +263,7 @@ def handle_join_user(data):
     emit('user_joined', {
         'user_id': user.id,
         'username': user.username,
+        'email': user.email,
         'avatar': user.avatar,
         'bio': user.bio
     })

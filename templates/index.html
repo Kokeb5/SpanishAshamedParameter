@@ -32,14 +32,31 @@
                 </div>
             </div>
             
-            <!-- Connexion -->
-            <div class="login-section" id="loginSection">
-                <div class="username-input-container">
-                    <span class="username-prefix">@</span>
-                    <input type="text" id="usernameInput" placeholder="nom_utilisateur" maxlength="19">
+            <!-- Authentification -->
+            <div class="auth-section" id="authSection">
+                <!-- Connexion -->
+                <div class="login-form" id="loginForm">
+                    <h4>Se connecter</h4>
+                    <input type="email" id="loginEmail" placeholder="Votre email" required>
+                    <input type="password" id="loginPassword" placeholder="Mot de passe" required>
+                    <div class="auth-status" id="loginStatus"></div>
+                    <button id="loginBtn" class="primary-btn">Se connecter</button>
+                    <p class="auth-switch">Pas de compte ? <a href="#" id="showRegister">S'inscrire</a></p>
                 </div>
-                <div class="username-status" id="usernameStatus"></div>
-                <button id="joinBtn" class="primary-btn">Se connecter</button>
+                
+                <!-- Inscription -->
+                <div class="register-form" id="registerForm" style="display: none;">
+                    <h4>Créer un compte</h4>
+                    <div class="username-input-container">
+                        <span class="username-prefix">@</span>
+                        <input type="text" id="registerUsername" placeholder="nom_utilisateur" maxlength="19" required>
+                    </div>
+                    <input type="email" id="registerEmail" placeholder="Votre email" required>
+                    <input type="password" id="registerPassword" placeholder="Mot de passe (6 caractères min)" required>
+                    <div class="auth-status" id="registerStatus"></div>
+                    <button id="registerBtn" class="primary-btn">Créer le compte</button>
+                    <p class="auth-switch">Déjà un compte ? <a href="#" id="showLogin">Se connecter</a></p>
+                </div>
             </div>
             
             <!-- Salles de chat -->

@@ -10,11 +10,25 @@ let selectedIcon = null;
 
 // Éléments DOM
 const elements = {
+    // Authentification
+    authSection: document.getElementById('authSection'),
+    loginForm: document.getElementById('loginForm'),
+    registerForm: document.getElementById('registerForm'),
+    
     // Connexion
-    loginSection: document.getElementById('loginSection'),
-    usernameInput: document.getElementById('usernameInput'),
-    usernameStatus: document.getElementById('usernameStatus'),
-    joinBtn: document.getElementById('joinBtn'),
+    loginEmail: document.getElementById('loginEmail'),
+    loginPassword: document.getElementById('loginPassword'),
+    loginStatus: document.getElementById('loginStatus'),
+    loginBtn: document.getElementById('loginBtn'),
+    showRegister: document.getElementById('showRegister'),
+    
+    // Inscription
+    registerUsername: document.getElementById('registerUsername'),
+    registerEmail: document.getElementById('registerEmail'),
+    registerPassword: document.getElementById('registerPassword'),
+    registerStatus: document.getElementById('registerStatus'),
+    registerBtn: document.getElementById('registerBtn'),
+    showLogin: document.getElementById('showLogin'),
     
     // Profil
     userProfile: document.getElementById('userProfile'),
@@ -191,9 +205,32 @@ function closeIconSelector() {
     });
 }
 
-// Validation du nom d'utilisateur
+// Gestion de l'authentification
+function showLoginForm() {
+    elements.loginForm.style.display = 'block';
+    elements.registerForm.style.display = 'none';
+    clearAuthStatus();
+}
+
+function showRegisterForm() {
+    elements.loginForm.style.display = 'none';
+    elements.registerForm.style.display = 'block';
+    clearAuthStatus();
+}
+
+function clearAuthStatus() {
+    elements.loginStatus.textContent = '';
+    elements.loginStatus.className = 'auth-status';
+    elements.registerStatus.textContent = '';
+    elements.registerStatus.className = 'auth-status';
+}
+
+function validateEmail(email) {
+    const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return re.test(email);
+}
+
 function validateUsername(username) {
-    // Supprimer @ s'il est déjà présent
     const cleanUsername = username.startsWith('@') ? username.slice(1) : username;
     
     if (!cleanUsername || cleanUsername.length < 2) {
@@ -211,27 +248,68 @@ function validateUsername(username) {
     return { valid: true, username: '@' + cleanUsername };
 }
 
-function checkUsernameAvailability(username) {
-    // Vérifier la disponibilité côté client d'abord
-    fetch('/api/users')
-        .then(r => r.json())
-        .then(users => {
-            const exists = users.some(user => user.username.toLowerCase() === username.toLowerCase());
-            
-            if (exists) {
-                elements.usernameStatus.textContent = 'Ce nom d\'utilisateur est déjà pris';
-                elements.usernameStatus.className = 'username-status taken';
-                elements.joinBtn.disabled = true;
-            } else {
-                elements.usernameStatus.textContent = 'Nom d\'utilisateur disponible';
-                elements.usernameStatus.className = 'username-status available';
-                elements.joinBtn.disabled = false;
-            }
-        })
-        .catch(() => {
-            elements.usernameStatus.textContent = '';
-            elements.usernameStatus.className = 'username-status';
-        });
+function handleLogin() {
+    const email = elements.loginEmail.value.trim();
+    const password = elements.loginPassword.value.trim();
+    
+    if (!email || !password) {
+        elements.loginStatus.textContent = 'Veuillez remplir tous les champs';
+        elements.loginStatus.className = 'auth-status error';
+        return;
+    }
+    
+    if (!validateEmail(email)) {
+        elements.loginStatus.textContent = 'Adresse email invalide';
+        elements.loginStatus.className = 'auth-status error';
+        return;
+    }
+    
+    elements.loginStatus.textContent = 'Connexion en cours...';
+    elements.loginStatus.className = 'auth-status info';
+    elements.loginBtn.disabled = true;
+    
+    socket.emit('login_user', { email, password });
+}
+
+function handleRegister() {
+    const username = elements.registerUsername.value.trim();
+    const email = elements.registerEmail.value.trim();
+    const password = elements.registerPassword.value.trim();
+    
+    if (!username || !email || !password) {
+        elements.registerStatus.textContent = 'Veuillez remplir tous les champs';
+        elements.registerStatus.className = 'auth-status error';
+        return;
+    }
+    
+    const usernameValidation = validateUsername(username);
+    if (!usernameValidation.valid) {
+        elements.registerStatus.textContent = usernameValidation.message;
+        elements.registerStatus.className = 'auth-status error';
+        return;
+    }
+    
+    if (!validateEmail(email)) {
+        elements.registerStatus.textContent = 'Adresse email invalide';
+        elements.registerStatus.className = 'auth-status error';
+        return;
+    }
+    
+    if (password.length < 6) {
+        elements.registerStatus.textContent = 'Le mot de passe doit contenir au moins 6 caractères';
+        elements.registerStatus.className = 'auth-status error';
+        return;
+    }
+    
+    elements.registerStatus.textContent = 'Création du compte...';
+    elements.registerStatus.className = 'auth-status info';
+    elements.registerBtn.disabled = true;
+    
+    socket.emit('register_user', {
+        username: usernameValidation.username,
+        email,
+        password
+    });
 }
 
 // Recherche d'utilisateurs
@@ -560,44 +638,30 @@ function searchMessages() {
     });
 }
 
-// Event Listeners
-elements.joinBtn.onclick = () => {
-    const inputValue = elements.usernameInput.value.trim();
-    const validation = validateUsername(inputValue);
-    
-    if (validation.valid) {
-        socket.emit('join_user', { username: validation.username });
-    } else {
-        elements.usernameStatus.textContent = validation.message;
-        elements.usernameStatus.className = 'username-status invalid';
-        elements.joinBtn.disabled = true;
+// Event Listeners pour l'authentification
+elements.showRegister.onclick = (e) => {
+    e.preventDefault();
+    showRegisterForm();
+};
+
+elements.showLogin.onclick = (e) => {
+    e.preventDefault();
+    showLoginForm();
+};
+
+elements.loginBtn.onclick = handleLogin;
+elements.registerBtn.onclick = handleRegister;
+
+// Gestion des touches Entrée
+elements.loginPassword.onkeypress = (e) => {
+    if (e.key === 'Enter') {
+        handleLogin();
     }
 };
 
-elements.usernameInput.oninput = (e) => {
-    const inputValue = e.target.value.trim();
-    const validation = validateUsername(inputValue);
-    
-    if (!inputValue) {
-        elements.usernameStatus.textContent = '';
-        elements.usernameStatus.className = 'username-status';
-        elements.joinBtn.disabled = true;
-        return;
-    }
-    
-    if (!validation.valid) {
-        elements.usernameStatus.textContent = validation.message;
-        elements.usernameStatus.className = 'username-status invalid';
-        elements.joinBtn.disabled = true;
-    } else {
-        // Vérifier la disponibilité
-        checkUsernameAvailability(validation.username);
-    }
-};
-
-elements.usernameInput.onkeypress = (e) => {
-    if (e.key === 'Enter' && !elements.joinBtn.disabled) {
-        elements.joinBtn.click();
+elements.registerPassword.onkeypress = (e) => {
+    if (e.key === 'Enter') {
+        handleRegister();
     }
 };
 
@@ -740,7 +804,7 @@ socket.on('request_user_info', () => {
 socket.on('user_joined', (data) => {
     currentUser = data;
     elements.currentUsername.textContent = data.username;
-    elements.loginSection.style.display = 'none';
+    elements.authSection.style.display = 'none';
     elements.userProfile.style.display = 'block';
     elements.roomsSection.style.display = 'block';
     elements.usersSection.style.display = 'block';
@@ -751,6 +815,19 @@ socket.on('user_joined', (data) => {
     socket.emit('join_room', { room: 'general' });
     
     showNotification('Bienvenue sur PRIKEB', `Connecté en tant que ${data.username}`, 'success');
+});
+
+socket.on('registration_success', (data) => {
+    elements.registerStatus.textContent = data.message;
+    elements.registerStatus.className = 'auth-status success';
+    elements.registerBtn.disabled = false;
+    
+    // Basculer vers le formulaire de connexion après 2 secondes
+    setTimeout(() => {
+        showLoginForm();
+        elements.loginEmail.value = elements.registerEmail.value;
+        showNotification('Inscription réussie', 'Vous pouvez maintenant vous connecter', 'success');
+    }, 2000);
 });
 
 socket.on('room_joined', (data) => {
@@ -826,8 +903,22 @@ setInterval(() => {
     }
 }, 5000);
 
-// Initialiser l'état du bouton
-elements.joinBtn.disabled = true;
+// Initialiser l'état des boutons
+elements.loginBtn.disabled = false;
+elements.registerBtn.disabled = false;
 
-// Focus sur le champ nom d'utilisateur au chargement
-elements.usernameInput.focus();
+// Gérer les erreurs d'authentification
+socket.on('error', (data) => {
+    if (elements.loginForm.style.display !== 'none') {
+        elements.loginStatus.textContent = data.message;
+        elements.loginStatus.className = 'auth-status error';
+        elements.loginBtn.disabled = false;
+    } else {
+        elements.registerStatus.textContent = data.message;
+        elements.registerStatus.className = 'auth-status error';
+        elements.registerBtn.disabled = false;
+    }
+});
+
+// Focus sur le champ email au chargement
+elements.loginEmail.focus();

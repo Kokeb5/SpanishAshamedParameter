@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Appel Audio/Video</title>
+</head>
+<body>
+<h2>Appel Audio/Video</h2>
+
+<input type="text" id="callId" placeholder="ID de l'appel">
+<button onclick="startCall('audio')">Appel audio</button>
+<button onclick="startCall('video')">Appel vidéo</button>
+<button onclick="acceptCall()">Accepter l'appel</button>
+<button onclick="endCall()">Terminer l'appel</button>
+<button onclick="shareScreen()">Partager l'écran</button>
+
+<video id="localVideo" autoplay muted></video>
+<video id="remoteVideo" autoplay></video>
+
+<script src="/static/main.js"></script>
+</body>

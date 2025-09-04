@@ -487,3 +487,29 @@ def end_call():
 @app.route("/get_offer/<call_id>")
 def get_offer(call_id):
     return jsonify(calls.get(call_id, {}))
+# Stockage temporaire des messages
+messages = {}
+
+@app.route("/send_message", methods=["POST"])
+def send_message():
+    data = request.json
+    sender = data["sender"]
+    receiver = data["receiver"]
+    message = data["message"]
+    
+    convo_id = "_".join(sorted([sender, receiver]))
+    if convo_id not in messages:
+        messages[convo_id] = []
+    
+    messages[convo_id].append({"sender": sender, "message": message})
+    return jsonify({"status": "Message envoyé"})
+
+@app.route("/get_messages/<user1>/<user2>")
+def get_messages(user1, user2):
+    convo_id = "_".join(sorted([user1, user2]))
+    convo = messages.get(convo_id, [])
+    return jsonify(convo)
+
+@app.route("/messages")
+def messages_page():
+    return render_template("messages.html")

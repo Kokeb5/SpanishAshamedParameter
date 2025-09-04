@@ -452,3 +452,38 @@ if __name__ == '__main__':
         db.create_all()
         print("Base de données initialisée avec succès !")
     socketio.run(app, host='0.0.0.0', port=5000, use_reloader=False, log_output=True)
+    calls = {}
+
+@app.route("/video_call")
+def video_call():
+    return render_template("call.html")
+
+@app.route("/offer", methods=["POST"])
+def offer():
+    data = request.json
+    call_id = data["call_id"]
+    call_type = data.get("type", "audio")
+    calls[call_id] = {"offer": data["offer"], "type": call_type}
+    return jsonify({"status": "Offre reçue"})
+
+@app.route("/answer", methods=["POST"])
+def answer():
+    data = request.json
+    call_id = data["call_id"]
+    if call_id in calls:
+        calls[call_id]["answer"] = data["answer"]
+        return jsonify({"status": "Réponse reçue"})
+    return jsonify({"status": "Appel introuvable"}), 404
+
+@app.route("/end_call", methods=["POST"])
+def end_call():
+    data = request.json
+    call_id = data["call_id"]
+    if call_id in calls:
+        del calls[call_id]
+        return jsonify({"status": "Appel terminé"})
+    return jsonify({"status": "Appel introuvable"}), 404
+
+@app.route("/get_offer/<call_id>")
+def get_offer(call_id):
+    return jsonify(calls.get(call_id, {}))

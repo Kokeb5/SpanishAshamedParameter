@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Chat & Call</title>
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+</head>
+<body>
+<h2>Application Communication</h2>
+
+<div>
+    <input type="text" id="sender" placeholder="Votre pseudo">
+    <input type="text" id="receiver" placeholder="Destinataire">
+</div>
+
+<!-- Messagerie -->
+<textarea id="message" placeholder="Votre message"></textarea>
+<button onclick="sendMessage()">Envoyer</button>
+<div id="chat"></div>
+
+<!-- Appel audio/vidéo -->
+<button onclick="startCall()">Appel Audio</button>
+<button onclick="startVideoCall()">Appel Vidéo</button>
+<button onclick="endCall()">Terminer l’appel</button>
+<video id="localVideo" autoplay muted></video>
+<video id="remoteVideo" autoplay></video>
+
+<script src="/static/main.js"></script>
+</body>
+</html>

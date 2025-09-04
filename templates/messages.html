@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Messagerie</title>
+</head>
+<body>
+<h2>Messagerie</h2>
+
+<input type="text" id="sender" placeholder="Votre pseudo">
+<input type="text" id="receiver" placeholder="Destinataire">
+<textarea id="message" placeholder="Votre message"></textarea>
+<button onclick="sendMessage()">Envoyer</button>
+
+<div id="chat"></div>
+
+<script>
+async function sendMessage() {
+    const sender = document.getElementById("sender").value;
+    const receiver = document.getElementById("receiver").value;
+    const message = document.getElementById("message").value;
+
+    if(!sender || !receiver || !message){ alert("Remplissez tous les champs !"); return; }
+
+    await fetch("/send_message", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({sender, receiver, message})
+    });
+
+    document.getElementById("message").value = "";
+    getMessages();
+}
+
+async function getMessages(){
+    const sender = document.getElementById("sender").value;
+    const receiver = document.getElementById("receiver").value;
+    if(!sender || !receiver) return;
+
+    const res = await fetch(/get_messages/${sender}/${receiver});
+    const data = await res.json();
+    const chatDiv = document.getElementById("chat");
+    chatDiv.innerHTML = "";
+    data.forEach(m=>{
+        chatDiv.innerHTML += <p><b>${m.sender}:</b> ${m.message}</p>;
+    });
+}
+
+// Rafraîchit le chat toutes les 2 secondes
+setInterval(getMessages, 2000);
+</script>
+</body>
+</html>

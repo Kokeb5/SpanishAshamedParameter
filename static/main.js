@@ -85,3 +85,128 @@ async function shareScreen(){
         localVideo.srcObject = screenStream;
     } catch(err){ console.log("Erreur partage d'écran:", err); }
 }
+// ------------------- Tes fonctionnalités existantes -------------------
+// Exemple : login, mot de passe, mot de passe oublié, etc.
+// Laisse ton ancien code ici, ne pas supprimer.
+
+// ------------------- Messagerie temps réel -------------------
+const socket = io();
+
+function joinConversation() {
+    const user1 = document.getElementById("sender").value;
+    const user2 = document.getElementById("receiver").value;
+    if (!user1 || !user2) return;
+    socket.emit('join', { user1, user2 });
+}
+
+function sendMessage() {
+    const sender = document.getElementById("sender").value;
+    const receiver = document.getElementById("receiver").value;
+    const message = document.getElementById("message").value;
+    if (!sender || !receiver || !message) return;
+
+    socket.emit('send_message', { sender, receiver, message });
+    document.getElementById("message").value = "";
+}
+
+socket.on('receive_message', data => {
+    const chatDiv = document.getElementById("chat");
+    chatDiv.innerHTML += <p><b>${data.sender}:</b> ${data.message}</p>;
+});
+
+socket.on('load_messages', data => {
+    const chatDiv = document.getElementById("chat");
+    chatDiv.innerHTML = "";
+    data.forEach(m => {
+        chatDiv.innerHTML += <p><b>${m.sender}:</b> ${m.message}</p>;
+    });
+});
+
+document.getElementById("receiver").addEventListener("blur", joinConversation);
+
+// ------------------- Appels Audio / Vidéo -------------------
+let localStream = null;
+let remoteStream = null;
+let pc = null;
+const servers = null; // Ajouter STUN/TURN pour production
+
+async function startCall(video = false) {
+    const sender = document.getElementById("sender").value;
+    const receiver = document.getElementById("receiver").value;
+    if (!sender || !receiver) return;
+
+    try {
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: video });
+        document.getElementById("localVideo").srcObject = localStream;
+    } catch (e) {
+        alert("Erreur accès caméra/micro: " + e);
+        return;
+    }
+
+    pc = new RTCPeerConnection(servers);
+    localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
+    pc.ontrack = (event) => {
+        remoteStream = event.streams[0];
+        document.getElementById("remoteVideo").srcObject = remoteStream;
+    };
+
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+
+    const room = [sender, receiver].sort().join("_");
+    socket.emit('call_user', { room, sender, receiver, offer });
+}
+
+socket.on('incoming_call', async data => {
+    const accept = confirm(Appel de ${data.sender}. Accepter ?);
+    if (!accept) return;
+
+    const sender = document.getElementById("sender").value;
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+    document.getElementById("localVideo").srcObject = localStream;
+
+    pc = new RTCPeerConnection(servers);
+    localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
+    pc.ontrack = (event) => {
+        remoteStream = event.streams[0];
+        document.getElementById("remoteVideo").srcObject = remoteStream;
+    };
+
+    await pc.setRemoteDescription(data.offer);
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+
+    socket.emit('answer_call', { room: data.room, answer });
+});
+
+socket.on('call_answered', async data => {
+    await pc.setRemoteDescription(data.answer);
+});
+
+function endCall() {
+    if (pc) pc.close();
+    if (localStream) localStream.getTracks().forEach(track => track.stop());
+    socket.emit('end_call', { room: [document.getElementById("sender").value, document.getElementById("receiver").value].sort().join("_") });
+}
+
+// ------------------- Partage d'écran -------------------
+async function startScreenShare() {
+    if (!pc) return alert("Commencez un appel avant le partage d'écran");
+
+    try {
+        const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+        const track = screenStream.getTracks()[0];
+        const sender = pc.getSenders().find(s => s.track.kind === "video");
+        if (sender) sender.replaceTrack(track);
+
+        track.onended = () => {
+            // Quand l’utilisateur arrête le partage, on remet sa caméra
+            localStream.getVideoTracks()[0].enabled = true;
+            const sender = pc.getSenders().find(s => s.track.kind === "video");
+            if (sender) sender.replaceTrack(localStream.getVideoTracks()[0]);
+        };
+    } catch (e) {
+        alert("Erreur partage d'écran: " + e);
+    }

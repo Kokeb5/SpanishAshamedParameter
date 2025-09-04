@@ -513,3 +513,62 @@ def get_messages(user1, user2):
 @app.route("/messages")
 def messages_page():
     return render_template("messages.html")
+from flask import Flask, render_template
+from flask_socketio import SocketIO, emit, join_room, leave_room
+
+app = Flask(_name_)
+app.config['SECRET_KEY'] = 'ton_secret_key'
+socketio = SocketIO(app, cors_allowed_origins="*")
+
+# Stockage temporaire
+messages = {}
+calls = {}
+
+# ---- Route principale ----
+@app.route("/")
+def home():
+    return render_template("chat.html")
+
+# ---- SocketIO Messagerie ----
+@socketio.on('send_message')
+def handle_send_message(data):
+    sender = data['sender']
+    receiver = data['receiver']
+    message = data['message']
+    convo_id = "_".join(sorted([sender, receiver]))
+    if convo_id not in messages:
+        messages[convo_id] = []
+    messages[convo_id].append({"sender": sender, "message": message})
+    emit('receive_message', {"sender": sender, "message": message}, room=convo_id)
+
+@socketio.on('join')
+def on_join(data):
+    user1 = data['user1']
+    user2 = data['user2']
+    convo_id = "_".join(sorted([user1, user2]))
+    join_room(convo_id)
+    convo = messages.get(convo_id, [])
+    emit('load_messages', convo)
+
+# ---- SocketIO Appels Audio/Video ----
+@socketio.on('call_user')
+def handle_call(data):
+    room = data['room']
+    calls[room] = data
+    emit('incoming_call', data, room=room)
+
+@socketio.on('answer_call')
+def handle_answer(data):
+    room = data['room']
+    emit('call_answered', data, room=room)
+
+@socketio.on('end_call')
+def handle_end_call(data):
+    room = data['room']
+    if room in calls:
+        del calls[room]
+    emit('call_ended', room=room)
+
+# ---- Lancer le serveur ----
+if _name_ == "_main_":
+    socketio.run(app, host="0.0.0.0", port=5000)
